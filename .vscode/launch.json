@@ -7,14 +7,14 @@
       "type": "chrome",
       "request": "launch",
       "preLaunchTask": "npm: start",
-      "url": "http://192.168.1.131:4200/"
+      "url": "http://0.0.0.0.:4200/"
     },
     {
       "name": "ng test",
       "type": "chrome",
       "request": "launch",
       "preLaunchTask": "npm: test",
-      "url": "http://192.168.1.131:9876/debug.html"
+      "url": "http://0.0.0.0:9876/debug.html"
     }
   ]
 }
