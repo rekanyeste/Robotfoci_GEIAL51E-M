@@ -24,8 +24,13 @@ export class LobbyComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.roomSubscription = this.gameService.roomState$.subscribe(room => {
       this.room = room;
+      if (!room) {
+        this.router.navigate(['/']);
+        return;
+      }
       if (this.room?.isStarted) {
         this.router.navigate(['/field']);
+        return;
       }
       this.cdr.detectChanges();
     });
@@ -60,5 +65,9 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   startGame(): void {
     this.gameService.startGame();
+  }
+
+  leaveRoom(): void {
+    this.gameService.leaveRoom();
   }
 }

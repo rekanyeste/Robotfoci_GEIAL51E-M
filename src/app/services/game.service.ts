@@ -9,6 +9,7 @@ import * as models from '../models/robosoccer.models';
 })
 export class GameService {
   private isRestarting = false;
+  private isleavingRoom = false;
 
   private roomStateSubject = new BehaviorSubject<models.Room | null>(null);
   public roomState$ = this.roomStateSubject.asObservable();
@@ -29,9 +30,8 @@ export class GameService {
     this.websocketService.listen(models.ServerMessageType.ReceiveRoom).subscribe((room) => {
       const ids = this.idStateSubject.value;
 
-      // Guard: Ignore room updates if we have explicitly left (playerId is null)
-      // or if we are waiting for the server to acknowledge a restart (ignore 'started' rooms)
-      if (ids.playerId === null || (this.isRestarting && room?.isStarted)) {
+      // Guard: Ignore room updates if we are waiting for the server to acknowledge a restart (ignore 'started' rooms)
+      if (this.isRestarting && room?.isStarted) {
         return;
       }
 
@@ -39,23 +39,34 @@ export class GameService {
         this.isRestarting = false;
       }
 
-      this.roomStateSubject.next(room);
-      console.log('Received room:', room);
+      if (this.isleavingRoom){
+        this.roomStateSubject.next(null);
+        this.isleavingRoom = false;
+    
+      } else{
+        this.roomStateSubject.next(room);
+        console.log('Received room:', room);
+      }
+
     });
 
     this.websocketService.listen(models.ServerMessageType.ReceiveConfig).subscribe((config) => {
+      console.log('Received config:', config);
       this.configStateSubject.next(config);
     });
 
     this.websocketService.listen(models.ServerMessageType.Error).subscribe((error) => {
+      console.log('Received error:', error);
       this.errorStateSubject.next(error);
     });
 
     this.websocketService.listen(models.ServerMessageType.GameOver).subscribe((winner) => {
+      console.log('Received game over:', winner);
       this.gameOverStateSubject.next(winner);
     });
 
     this.websocketService.listen(models.ServerMessageType.ReceiveId).subscribe((ids) => {
+      console.log('Received ID:', ids);
       this.idStateSubject.next(ids);
     });
   }
@@ -63,11 +74,15 @@ export class GameService {
   // Client to Server Message Handlers
 
   public createRoom(username: string): void {
+    this.isleavingRoom = false;
+    this.isRestarting = false;
     console.log('Creating room with username:', username);
     this.websocketService.send(models.ClientMessageType.CreateRoom, username);
   }
 
   public joinRoom(username: string, roomId: number): void {
+    this.isleavingRoom = false;
+    this.isRestarting = false;
     const payload: models.JoinMessage = { username, roomId };
     this.websocketService.send(models.ClientMessageType.JoinRoom, payload);
   }
@@ -75,8 +90,10 @@ export class GameService {
   public leaveRoom(): void {
     this.websocketService.send(models.ClientMessageType.LeaveRoom, null);
     this.isRestarting = false;
+    this.isleavingRoom = true;
     this.roomStateSubject.next(null);
     this.idStateSubject.next({ playerId: null, roomId: null });
+    this.configStateSubject.next(null);
   }
 
   public getId(): void {
@@ -91,8 +108,8 @@ export class GameService {
 
   public startGame(): void {
     this.isRestarting = false;
-    this.websocketService.send(models.ClientMessageType.StartGame, null);
     this.gameOverStateSubject.next(null);
+    this.websocketService.send(models.ClientMessageType.StartGame, null);
   }
 
   public restartGame(): void {

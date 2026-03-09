@@ -36,6 +36,7 @@ export class WebsocketService {
   public send(eventName: string, data: any): void {
     if (!this.socket.connected) {
       console.warn(`Attempting to send ${eventName} while disconnected. Buffering...`);
+      this.socket.connect();
     }
     console.log(`Sending event: ${eventName}`, data);
     this.socket.emit(eventName, data);

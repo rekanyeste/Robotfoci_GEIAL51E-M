@@ -54,7 +54,9 @@ export class Field implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
 
-    this.gameService.getId();
+    if (this.playerId === null) {
+      this.gameService.getId();
+    }
   }
 
   ngOnDestroy(): void {
