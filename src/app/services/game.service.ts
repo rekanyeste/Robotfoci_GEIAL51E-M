@@ -1,6 +1,6 @@
 
 import { Injectable } from '@angular/core';
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { WebsocketService } from './websocket.service';
 import * as models from '../models/robosoccer.models';
 

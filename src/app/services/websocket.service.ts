@@ -11,7 +11,10 @@ export class WebsocketService {
   private socket: Socket;
 
   constructor(private zone: NgZone) {
-    this.socket = io(environment.serverUrl);
+    this.socket = io(environment.serverUrl, {
+      withCredentials: true,
+      transports: ['polling', 'websocket']
+      });
 
     this.socket.on('connect', () => {
       console.log('Connected to WebSocket server at:', environment.serverUrl);
