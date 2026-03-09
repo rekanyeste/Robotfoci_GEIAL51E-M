@@ -17,8 +17,18 @@ export class Field implements OnInit, OnDestroy {
   room: models.Room | null = null;
   config: models.GameConfigMessage | null = null;
   playerId: number | null = null;
-  public redGoalColor = '#FF8888';
-  public blueGoalColor = '#8888FF';
+  public leftGoalColor = '#0000FF';
+  public rightGoalColor = '#FF0000';
+
+  get redTeamPlayers(): models.Player[] {
+    if (!this.room) return [];
+    return this.room.players.filter(p => p.team === models.TeamType.Red);
+  }
+
+  get blueTeamPlayers(): models.Player[] {
+    if (!this.room) return [];
+    return this.room.players.filter(p => p.team === models.TeamType.Blue);
+  }
 
   private roomSubscription: Subscription | undefined;
   private configSubscription: Subscription | undefined;

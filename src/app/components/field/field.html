@@ -1,5 +1,6 @@
 <div
   id="container"
+  *ngIf="room && config"
   style="
     justify-content: center;
     display: flex;
@@ -9,55 +10,75 @@
     margin-top: 120px;
   "
 >
-  <div *ngIf="room" class="scoreboard">
-    <p>Red: {{ room.score.red }} - Blue: {{ room.score.blue }}</p>
+  <!-- LOBBY VIEW -->
+  <div *ngIf="!room.isStarted" style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+    <h2>Lobby (Room: {{ room.roomId }})</h2>
+    <div style="display: flex; gap: 50px;">
+        <div class="team">
+            <h3>Red Team</h3>
+            <ul>
+                <li *ngFor="let player of redTeamPlayers">{{ player.name }}</li>
+            </ul>
+        </div>
+        <div class="team">
+            <h3>Blue Team</h3>
+            <ul>
+                <li *ngFor="let player of blueTeamPlayers">{{ player.name }}</li>
+            </ul>
+        </div>
+    </div>
+    <div class="controls">
+      <button (click)="startGame()">Start Game</button>
+      <button (click)="pickTeam(TeamType.Red)" [disabled]="!playerId">Join Red</button>
+      <button (click)="pickTeam(TeamType.Blue)" [disabled]="!playerId">Join Blue</button>
+    </div>
   </div>
 
-  <svg
-    *ngIf="config"
-    [attr.width]="config.fieldWidth"
-    [attr.height]="config.fieldHeight"
-    id="fieldGreen"
-    style="border: 3px solid black; background-color: green"
-  >
-    <!-- Red Goal -->
-    <rect
-      x="0"
-      [attr.y]="config.goalMinY"
-      width="10"
-      [attr.height]="config.goalMaxY - config.goalMinY"
-      [attr.fill]="redGoalColor"
-    ></rect>
+  <!-- GAME VIEW -->
+  <div *ngIf="room.isStarted" style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+    <div class="scoreboard">
+      <p>Red: {{ room.score.red }} - Blue: {{ room.score.blue }}</p>
+    </div>
 
-    <!-- Blue Goal -->
-    <rect
-      [attr.x]="config.fieldWidth - 10"
-      [attr.y]="config.goalMinY"
-      width="10"
-      [attr.height]="config.goalMaxY - config.goalMinY"
-      [attr.fill]="blueGoalColor"
-    ></rect>
+    <svg
+      [attr.width]="config.fieldWidth"
+      [attr.height]="config.fieldHeight"
+      id="fieldGreen"
+      style="border: 3px solid black; background-color: green"
+    >
+      <!-- Blue Goal (Left) -->
+      <rect
+        x="0"
+        [attr.y]="config.goalMinY"
+        width="10"
+        [attr.height]="config.goalMaxY - config.goalMinY"
+        [attr.fill]="leftGoalColor"
+      ></rect>
 
-    <g *ngIf="room">
-      <circle
-        *ngFor="let p of room.players"
-        [attr.cx]="p.x"
-        [attr.cy]="p.y"
-        [attr.r]="config.playerRadius"
-        [attr.fill]="p.team"
-      ></circle>
-      <circle
-        [attr.cx]="room.ball.x"
-        [attr.cy]="room.ball.y"
-        [attr.r]="config.ballRadius"
-        fill="orange"
-      ></circle>
-    </g>
-  </svg>
+      <!-- Red Goal (Right) -->
+      <rect
+        [attr.x]="config.fieldWidth - 10"
+        [attr.y]="config.goalMinY"
+        width="10"
+        [attr.height]="config.goalMaxY - config.goalMinY"
+        [attr.fill]="rightGoalColor"
+      ></rect>
 
-  <div class="controls">
-    <button (click)="startGame()">Start Game</button>
-    <button (click)="pickTeam(TeamType.Red)">Pick Red</button>
-    <button (click)="pickTeam(TeamType.Blue)">Pick Blue</button>
+      <g *ngIf="room">
+        <circle
+          *ngFor="let p of room.players"
+          [attr.cx]="p.x"
+          [attr.cy]="p.y"
+          [attr.r]="config.playerRadius"
+          [attr.fill]="p.team"
+        ></circle>
+        <circle
+          [attr.cx]="room.ball.x"
+          [attr.cy]="room.ball.y"
+          [attr.r]="config.ballRadius"
+          fill="orange"
+        ></circle>
+      </g>
+    </svg>
   </div>
 </div>
