@@ -17,6 +17,14 @@
       </ul>
       <button (click)="joinTeam(TeamType.Blue)">Join Team Blue</button>
     </div>
+
+    <div class="team">
+      <h2>Spectators</h2>
+      <ul>
+        <li *ngFor="let player of getSpectators()">{{ player.name }}</li>
+      </ul>
+      <button (click)="joinTeam(TeamType.Spectator)">Join Spectators</button>
+    </div>
   </div>
 
   <button (click)="startGame()">Start Game</button>

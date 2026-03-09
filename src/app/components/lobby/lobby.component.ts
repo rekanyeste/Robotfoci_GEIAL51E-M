@@ -47,6 +47,10 @@ export class LobbyComponent implements OnInit, OnDestroy {
     return this.room ? this.room.players.filter(p => p.team === team) : [];
   }
 
+  getSpectators(): models.Player[] {
+    return this.room ? this.room.players.filter(p => p.team === TeamType.Spectator || p.team === null) : [];
+  }
+
   joinTeam(team: models.TeamType): void {
     if (this.playerId !== null) {
       console.log('Joining team:', team);

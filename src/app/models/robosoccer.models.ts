@@ -94,6 +94,7 @@ export enum ClientMessageType {
 export enum TeamType {
   Red = 'red',
   Blue = 'blue',
+  Spectator = 'spectator',
 }
 
 export enum ErrorType {

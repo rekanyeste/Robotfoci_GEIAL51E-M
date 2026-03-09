@@ -142,6 +142,10 @@ export class Field implements OnInit, OnDestroy {
     this.router.navigate(['/lobby']);
   }
 
+  getActivePlayers(): models.Player[] {
+    return this.room ? this.room.players.filter(p => p.team === models.TeamType.Red || p.team === models.TeamType.Blue) : [];
+  }
+
   leaveRoom(): void {
     this.gameService.leaveRoom();
     this.router.navigate(['/']);
