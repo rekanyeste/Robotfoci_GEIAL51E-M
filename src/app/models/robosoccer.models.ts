@@ -86,7 +86,6 @@ export enum ClientMessageType {
   LeaveRoom = 'leaveRoom',
   GetId = 'getId',
   PickTeam = 'pickTeam',
-  PickPosition = 'pickPosition',
   StartGame = 'startGame',
   RestartGame = 'restartGame',
   MovementMessage = 'movementMessage'

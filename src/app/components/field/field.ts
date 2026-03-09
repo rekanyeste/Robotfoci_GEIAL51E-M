@@ -1,59 +1,57 @@
 import { Component, OnDestroy, OnInit, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { GameService } from '../../services/game.service';
 import * as models from '../../models/robosoccer.models';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-field',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './field.html',
   styleUrls: ['./field.scss'],
 })
 export class Field implements OnInit, OnDestroy {
-  TeamType = models.TeamType;
   room: models.Room | null = null;
   config: models.GameConfigMessage | null = null;
   playerId: number | null = null;
+  winner: models.TeamType | null = null;
+  public TeamType = models.TeamType;
   public leftGoalColor = '#0000FF';
   public rightGoalColor = '#FF0000';
-
-  get redTeamPlayers(): models.Player[] {
-    if (!this.room) return [];
-    return this.room.players.filter(p => p.team === models.TeamType.Red);
-  }
-
-  get blueTeamPlayers(): models.Player[] {
-    if (!this.room) return [];
-    return this.room.players.filter(p => p.team === models.TeamType.Blue);
-  }
 
   private roomSubscription: Subscription | undefined;
   private configSubscription: Subscription | undefined;
   private idSubscription: Subscription | undefined;
+  private gameOverSubscription: Subscription | undefined;
 
   private acceleration = { x: 0, y: 0 };
   private keysPressed: { [key: string]: boolean } = {};
   private readonly ACCELERATION_STEP = 10;
   private movementIntervalId: number | null = null;
 
-  constructor(private gameService: GameService, private cdr: ChangeDetectorRef) {}
+  constructor(private gameService: GameService, private cdr: ChangeDetectorRef, private router: Router) {}
 
   ngOnInit() {
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
-      console.log('Received room update in Field component:', room);
       this.room = room;
       this.cdr.detectChanges();
     });
 
     this.configSubscription = this.gameService.configState$.subscribe((config) => {
       this.config = config;
+      this.cdr.detectChanges();
     });
 
     this.idSubscription = this.gameService.idState$.subscribe((ids) => {
       this.playerId = ids.playerId;
+      this.cdr.detectChanges();
+    });
+
+    this.gameOverSubscription = this.gameService.gameOverState$.subscribe((winner) => {
+      this.winner = winner;
+      this.cdr.detectChanges();
     });
 
     this.gameService.getId();
@@ -69,18 +67,11 @@ export class Field implements OnInit, OnDestroy {
     if (this.idSubscription) {
       this.idSubscription.unsubscribe();
     }
+    if (this.gameOverSubscription) {
+      this.gameOverSubscription.unsubscribe();
+    }
     if (this.movementIntervalId !== null) {
       clearInterval(this.movementIntervalId);
-    }
-  }
-
-  startGame() {
-    this.gameService.startGame();
-  }
-
-  pickTeam(team: models.TeamType) {
-    if (this.playerId) {
-      this.gameService.pickTeam(this.playerId, team);
     }
   }
 
@@ -133,16 +124,26 @@ export class Field implements OnInit, OnDestroy {
 
     if (isMoving && this.movementIntervalId === null) {
       this.movementIntervalId = window.setInterval(() => {
-        if (this.playerId) {
+        if (this.playerId !== null) {
           this.gameService.sendMovement(this.playerId, this.acceleration.x, this.acceleration.y);
         }
       }, 33); // ~30 FPS
     } else if (!isMoving && this.movementIntervalId !== null) {
       clearInterval(this.movementIntervalId);
       this.movementIntervalId = null;
-      if (this.playerId) {
+      if (this.playerId !== null) {
         this.gameService.sendMovement(this.playerId, 0, 0);
       }
     }
+  }
+
+  restart(): void {
+    this.gameService.restartGame();
+    this.router.navigate(['/lobby']);
+  }
+
+  leaveRoom(): void {
+    this.gameService.leaveRoom();
+    this.router.navigate(['/']);
   }
 }

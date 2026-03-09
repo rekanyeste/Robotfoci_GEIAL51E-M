@@ -24,7 +24,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
       if (room) {
-        this.router.navigate(['field']);
+        this.router.navigate(['lobby']);
       }
     });
   }

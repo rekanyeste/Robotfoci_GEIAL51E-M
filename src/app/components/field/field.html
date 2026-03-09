@@ -1,41 +1,6 @@
-<div
-  id="container"
-  *ngIf="room && config"
-  style="
-    justify-content: center;
-    display: flex;
-    gap: 20px;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 120px;
-  "
->
-  <!-- LOBBY VIEW -->
-  <div *ngIf="!room.isStarted" style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
-    <h2>Lobby (Room: {{ room.roomId }})</h2>
-    <div style="display: flex; gap: 50px;">
-        <div class="team">
-            <h3>Red Team</h3>
-            <ul>
-                <li *ngFor="let player of redTeamPlayers">{{ player.name }}</li>
-            </ul>
-        </div>
-        <div class="team">
-            <h3>Blue Team</h3>
-            <ul>
-                <li *ngFor="let player of blueTeamPlayers">{{ player.name }}</li>
-            </ul>
-        </div>
-    </div>
-    <div class="controls">
-      <button (click)="startGame()">Start Game</button>
-      <button (click)="pickTeam(TeamType.Red)" [disabled]="!playerId">Join Red</button>
-      <button (click)="pickTeam(TeamType.Blue)" [disabled]="!playerId">Join Blue</button>
-    </div>
-  </div>
-
+<div id="container">
   <!-- GAME VIEW -->
-  <div *ngIf="room.isStarted" style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+  <div *ngIf="room && room.isStarted && config">
     <div class="scoreboard">
       <p>Red: {{ room.score.red }} - Blue: {{ room.score.blue }}</p>
     </div>
@@ -80,5 +45,25 @@
         ></circle>
       </g>
     </svg>
+  </div>
+
+  <!-- END SCREEN OVERLAY -->
+  <div *ngIf="winner" class="end-screen-overlay">
+    <div class="end-screen-content">
+      <h1 class="winner-text">WINNER</h1>
+      <div class="winner-banner" [style.background-color]="winner === TeamType.Red ? '#FF0000' : '#0000FF'">
+        {{ winner | uppercase }} TEAM
+      </div>
+      
+      <div class="final-score" *ngIf="room">
+        <p class="score-label">Final Score</p>
+        <p class="score-values">Red: {{ room.score.red }} - Blue: {{ room.score.blue }}</p>
+      </div>
+
+      <div class="actions">
+        <button class="btn-restart" (click)="restart()">RESTART GAME</button>
+        <button class="btn-leave" (click)="leaveRoom()">LEAVE ROOM</button>
+      </div>
+    </div>
   </div>
 </div>

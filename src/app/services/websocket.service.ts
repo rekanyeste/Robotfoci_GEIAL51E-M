@@ -12,6 +12,14 @@ export class WebsocketService {
 
   constructor(private zone: NgZone) {
     this.socket = io(environment.serverUrl);
+
+    this.socket.on('connect', () => {
+      console.log('Connected to WebSocket server at:', environment.serverUrl);
+    });
+
+    this.socket.on('connect_error', (error) => {
+      console.error('Connection error:', error);
+    });
   }
 
   public connect(): void {
@@ -23,6 +31,10 @@ export class WebsocketService {
   }
 
   public send(eventName: string, data: any): void {
+    if (!this.socket.connected) {
+      console.warn(`Attempting to send ${eventName} while disconnected. Buffering...`);
+    }
+    console.log(`Sending event: ${eventName}`, data);
     this.socket.emit(eventName, data);
   }
 
