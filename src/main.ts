@@ -1,7 +1,13 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
-import { Field } from './app/components/field/field';
+import { provideRouter } from '@angular/router';
 
-bootstrapApplication(Field, {
-  providers: [provideHttpClient()],
+import { App } from './app/app-components/app';
+import { routes } from './app/app-components/app.routes';
+
+bootstrapApplication(App, {
+  providers: [
+    provideHttpClient(),
+    provideRouter(routes)
+  ],
 }).catch((err) => console.error(err));

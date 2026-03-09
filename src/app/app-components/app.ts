@@ -1,10 +1,9 @@
 import { Component, signal } from '@angular/core';
-import { Field } from '../components/field/field';
-import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, Field],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   standalone: true,
