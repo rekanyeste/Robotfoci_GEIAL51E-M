@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GameService } from '../../services/game.service';
@@ -17,16 +17,25 @@ export class Field implements OnInit, OnDestroy {
   room: models.Room | null = null;
   config: models.GameConfigMessage | null = null;
   playerId: number | null = null;
+  public redGoalColor = '#FF8888';
+  public blueGoalColor = '#8888FF';
 
   private roomSubscription: Subscription | undefined;
   private configSubscription: Subscription | undefined;
   private idSubscription: Subscription | undefined;
 
-  constructor(private gameService: GameService) {}
+  private acceleration = { x: 0, y: 0 };
+  private keysPressed: { [key: string]: boolean } = {};
+  private readonly ACCELERATION_STEP = 10;
+  private movementIntervalId: number | null = null;
+
+  constructor(private gameService: GameService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
+      console.log('Received room update in Field component:', room);
       this.room = room;
+      this.cdr.detectChanges();
     });
 
     this.configSubscription = this.gameService.configState$.subscribe((config) => {
@@ -50,6 +59,9 @@ export class Field implements OnInit, OnDestroy {
     if (this.idSubscription) {
       this.idSubscription.unsubscribe();
     }
+    if (this.movementIntervalId !== null) {
+      clearInterval(this.movementIntervalId);
+    }
   }
 
   startGame() {
@@ -62,12 +74,65 @@ export class Field implements OnInit, OnDestroy {
     }
   }
 
-  onFieldClick(event: MouseEvent) {
-    if (this.playerId) {
-      const rect = (event.currentTarget as Element).getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      this.gameService.sendMovement(this.playerId, x, y);
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent) {
+    const key = event.key.toLowerCase();
+    if (['w', 'a', 's', 'd'].indexOf(key) === -1) return;
+
+    if (this.keysPressed[key]) {
+      return; // Key already down
+    }
+    this.keysPressed[key] = true;
+    this.updateAccelerationAndInterval();
+  }
+
+  @HostListener('window:keyup', ['$event'])
+  onKeyUp(event: KeyboardEvent) {
+    const key = event.key.toLowerCase();
+    if (['w', 'a', 's', 'd'].indexOf(key) === -1) return;
+    
+    this.keysPressed[key] = false;
+    this.updateAccelerationAndInterval();
+  }
+
+  private updateAccelerationAndInterval() {
+    let ax = 0;
+    let ay = 0;
+
+    const up = this.keysPressed['w'];
+    const down = this.keysPressed['s'];
+    const left = this.keysPressed['a'];
+    const right = this.keysPressed['d'];
+
+    if (up && !down) {
+      ay = -this.ACCELERATION_STEP;
+    } else if (down && !up) {
+      ay = this.ACCELERATION_STEP;
+    }
+
+    if (left && !right) {
+      ax = -this.ACCELERATION_STEP;
+    } else if (right && !left) {
+      ax = this.ACCELERATION_STEP;
+    }
+
+    this.acceleration.x = ax;
+    this.acceleration.y = ay;
+
+    const isMoving = ax !== 0 || ay !== 0;
+
+    if (isMoving && this.movementIntervalId === null) {
+      this.movementIntervalId = window.setInterval(() => {
+        if (this.playerId) {
+          this.gameService.sendMovement(this.playerId, this.acceleration.x, this.acceleration.y);
+        }
+      }, 33); // ~30 FPS
+    } else if (!isMoving && this.movementIntervalId !== null) {
+      clearInterval(this.movementIntervalId);
+      this.movementIntervalId = null;
+      if (this.playerId) {
+        this.gameService.sendMovement(this.playerId, 0, 0);
+      }
     }
   }
 }

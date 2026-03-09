@@ -1,5 +1,5 @@
 
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -10,7 +10,7 @@ import { environment } from '../../environments/environment';
 export class WebsocketService {
   private socket: Socket;
 
-  constructor() {
+  constructor(private zone: NgZone) {
     this.socket = io(environment.serverUrl);
   }
 
@@ -29,7 +29,9 @@ export class WebsocketService {
   public listen(eventName: string): Observable<any> {
     return new Observable((observer) => {
       this.socket.on(eventName, (data) => {
-        observer.next(data);
+        this.zone.run(() => {
+          observer.next(data);
+        });
       });
     });
   }

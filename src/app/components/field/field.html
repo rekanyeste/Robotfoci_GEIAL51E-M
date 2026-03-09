@@ -17,10 +17,27 @@
     *ngIf="config"
     [attr.width]="config.fieldWidth"
     [attr.height]="config.fieldHeight"
-    (click)="onFieldClick($event)"
     id="fieldGreen"
     style="border: 3px solid black; background-color: green"
   >
+    <!-- Red Goal -->
+    <rect
+      x="0"
+      [attr.y]="config.goalMinY"
+      width="10"
+      [attr.height]="config.goalMaxY - config.goalMinY"
+      [attr.fill]="redGoalColor"
+    ></rect>
+
+    <!-- Blue Goal -->
+    <rect
+      [attr.x]="config.fieldWidth - 10"
+      [attr.y]="config.goalMinY"
+      width="10"
+      [attr.height]="config.goalMaxY - config.goalMinY"
+      [attr.fill]="blueGoalColor"
+    ></rect>
+
     <g *ngIf="room">
       <circle
         *ngFor="let p of room.players"
