@@ -31,7 +31,7 @@
 
       <g *ngIf="room">
         <circle
-          *ngFor="let p of getActivePlayers()"
+          *ngFor="let p of getAllCharacters()"
           [attr.cx]="p.x"
           [attr.cy]="p.y"
           [attr.r]="config.playerRadius"

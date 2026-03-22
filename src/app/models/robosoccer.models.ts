@@ -12,16 +12,22 @@ export interface Room {
   countdownTicks: number;
 }
 
+export interface Character {
+  id: number;
+  playerId: number;
+  x: number;
+  y: number;
+  x_velocity: number;
+  y_velocity: number;
+}
+
 export interface Player {
   id: number;
   socketId: string;
   name: string;
   team: TeamType | null;
   isInactive: boolean;
-  x: number;
-  y: number;
-  x_velocity: number;
-  y_velocity: number;
+  characters: Character[];
 }
 
 export interface Ball {
@@ -48,6 +54,7 @@ export interface IdMessage {
 
 export interface MovementMessage {
   playerId: number | null;
+  characterId: number | null;
   x: number | null;
   y: number | null;
 }

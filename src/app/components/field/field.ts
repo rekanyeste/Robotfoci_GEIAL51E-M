@@ -126,15 +126,25 @@ export class Field implements OnInit, OnDestroy {
 
     if (isMoving && this.movementIntervalId === null) {
       this.movementIntervalId = window.setInterval(() => {
-        if (this.playerId !== null) {
-          this.gameService.sendMovement(this.playerId, this.acceleration.x, this.acceleration.y);
+        if (this.playerId !== null && this.room) {
+          const player = this.room.players.find(p => p.id === this.playerId);
+          if (player) {
+            player.characters.forEach(character => {
+              this.gameService.sendMovement(this.playerId as number, character.id, this.acceleration.x, this.acceleration.y);
+            });
+          }
         }
       }, 33); // ~30 FPS
     } else if (!isMoving && this.movementIntervalId !== null) {
       clearInterval(this.movementIntervalId);
       this.movementIntervalId = null;
-      if (this.playerId !== null) {
-        this.gameService.sendMovement(this.playerId, 0, 0);
+      if (this.playerId !== null && this.room) {
+        const player = this.room.players.find(p => p.id === this.playerId);
+        if (player) {
+          player.characters.forEach(character => {
+            this.gameService.sendMovement(this.playerId as number, character.id, 0, 0);
+          });
+        }
       }
     }
   }
@@ -144,8 +154,16 @@ export class Field implements OnInit, OnDestroy {
     this.router.navigate(['/lobby']);
   }
 
-  getActivePlayers(): models.Player[] {
-    return this.room ? this.room.players.filter(p => p.team === models.TeamType.Red || p.team === models.TeamType.Blue) : [];
+  getAllCharacters(): (models.Character & { team: models.TeamType | null })[] {
+    if (!this.room) {
+      return [];
+    }
+    return this.room.players.flatMap(player =>
+      player.characters.map(character => ({
+        ...character,
+        team: player.team
+      }))
+    ).filter(c => c.team === models.TeamType.Red || c.team === models.TeamType.Blue);
   }
 
   leaveRoom(): void {

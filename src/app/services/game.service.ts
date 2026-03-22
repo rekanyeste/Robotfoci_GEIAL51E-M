@@ -122,8 +122,8 @@ export class GameService {
     }
   }
 
-  public sendMovement(playerId: number, x: number, y: number): void {
-    const payload: models.MovementMessage = { playerId, x, y };
+  public sendMovement(playerId: number, characterId: number, x: number, y: number): void {
+    const payload: models.MovementMessage = { playerId, characterId, x, y };
     this.websocketService.send(models.ClientMessageType.MovementMessage, payload);
   }
 }
