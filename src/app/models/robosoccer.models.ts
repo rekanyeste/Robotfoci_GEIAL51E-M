@@ -52,10 +52,12 @@ export interface IdMessage {
 }
 
 export interface MovementMessage {
-  playerId: number | null;
-  characterId: number | null;
-  x: number | null;
-  y: number | null;
+  coordinates: { x: number, y: number }[];
+}
+
+export interface CollisionMessage {
+  playerId: number;
+  characterId: number;
 }
 
 export interface ErrorMessage {
@@ -82,7 +84,8 @@ export enum ServerMessageType {
   GameOver = 'gameOver',
   Error = 'error',
   ReconnectAck = 'reconnectAck',
-  ReceiveConfig = 'receive-config'
+  ReceiveConfig = 'receive-config',
+  Collision = 'collision'
 }
 
 export enum ClientMessageType {

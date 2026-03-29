@@ -26,6 +26,9 @@ export class GameService {
   private gameOverStateSubject= new BehaviorSubject<models.TeamType | null>(null);
   public gameOverState$ = this.gameOverStateSubject.asObservable();
 
+  private collisionStateSubject = new BehaviorSubject<models.CollisionMessage | null>(null);
+  public collisionState$ = this.collisionStateSubject.asObservable();
+
   constructor(private websocketService: WebsocketService) {
     this.websocketService.listen(models.ServerMessageType.ReceiveRoom).subscribe((room) => {
       const ids = this.idStateSubject.value;
@@ -68,6 +71,11 @@ export class GameService {
     this.websocketService.listen(models.ServerMessageType.ReceiveId).subscribe((ids) => {
       console.log('Received ID:', ids);
       this.idStateSubject.next(ids);
+    });
+
+    this.websocketService.listen(models.ServerMessageType.Collision).subscribe((collision) => {
+      console.log('Received collision:', collision);
+      this.collisionStateSubject.next(collision);
     });
   }
 
@@ -122,8 +130,8 @@ export class GameService {
     }
   }
 
-  public sendMovement(playerId: number, characterId: number, x: number, y: number): void {
-    const payload: models.MovementMessage = { playerId, characterId, x, y };
+  public sendMovement(coordinates: { x: number, y: number }[]): void {
+    const payload: models.MovementMessage = { coordinates };
     this.websocketService.send(models.ClientMessageType.MovementMessage, payload);
   }
 }
