@@ -1,8 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  HostListener,
+  ChangeDetectorRef,
+  NgZone,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { PointsService } from '../../services/points-service';
-import { ServerInterface } from '../../models/points-interface';
+import { GameService } from '../../services/game.service';
+import * as models from '../../models/robosoccer.models';
+import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
+import { AiService } from '../../services/ai.service';
 
 @Component({
   selector: 'app-field',
@@ -11,53 +20,116 @@ import { ServerInterface } from '../../models/points-interface';
   templateUrl: './field.html',
   styleUrls: ['./field.scss'],
 })
-export class Field implements OnInit {
-  points: ServerInterface[] = [];
-  selected: ServerInterface | null = null;
+export class Field implements OnInit, OnDestroy {
+  room: models.Room | null = null;
+  config: models.GameConfigMessage | null = null;
+  playerId: number | null = null;
+  winner: models.TeamType | null = null;
+  public TeamType = models.TeamType;
+  public leftGoalColor = '#0000FF';
+  public rightGoalColor = '#FF0000';
+  private roomSubscription: Subscription | undefined;
+  private configSubscription: Subscription | undefined;
+  private idSubscription: Subscription | undefined;
+  private gameOverSubscription: Subscription | undefined;
+  private collisionSubscription: Subscription | undefined;
 
-  constructor(private pointsService: PointsService) {}
+  constructor(
+    private gameService: GameService,
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private aiService: AiService,
+    private ngZone: NgZone,
+  ) {}
 
   ngOnInit() {
-    this.points = [
-      { id: 1, type: 'playerBlue', x: 100, y: 200, updatedAt: new Date().toISOString() },
-      { id: 2, type: 'playerRed', x: 200, y: 200, updatedAt: new Date().toISOString() },
-      { id: 3, type: 'ball', x: 150, y: 180, updatedAt: new Date().toISOString() },
-    ];
-    // this.load(); -> ha van backend vissza lehet kapcsolni, this.points-ot meg törölni!!
-  }
-
-  load() {
-    this.pointsService.getAll().subscribe((data) => (this.points = data));
-  }
-
-  select(point: ServerInterface) {
-    this.selected = { ...point };
-  }
-
-  save() {
-    if (!this.selected) return;
-    const localCopy = { ...this.selected };
-    const idx = this.points.findIndex((p) => p.id === localCopy.id);
-    if (idx >= 0) this.points[idx] = localCopy;
-
-    this.pointsService.update(localCopy).subscribe({
-      next: (updated) => {
-        if (idx >= 0) this.points[idx] = updated;
-        this.selected = null;
-      },
-      error: (err) => {
-        if (idx >= 0) this.points[idx] = this.points[idx];
-        console.error('Update failed', err);
-      },
+    this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
+      this.room = room;
+      this.cdr.detectChanges();
+      if (this.playerId !== null && this.room && this.config) {
+        const coordinates = this.aiService.calculateMovements(
+          this.room,
+          this.config,
+          this.playerId,
+        );
+        if (coordinates && coordinates.length > 0) {
+          this.gameService.sendMovement(coordinates);
+        }
+      }
     });
+
+    this.configSubscription = this.gameService.configState$.subscribe((config) => {
+      this.config = config;
+      this.cdr.detectChanges();
+    });
+
+    this.idSubscription = this.gameService.idState$.subscribe((ids) => {
+      this.playerId = ids.playerId;
+      this.cdr.detectChanges();
+    });
+
+    this.gameOverSubscription = this.gameService.gameOverState$.subscribe((winner) => {
+      this.winner = winner;
+      this.cdr.detectChanges();
+    });
+
+    this.collisionSubscription = this.gameService.collisionState$.subscribe((collision) => {
+      if (collision) {
+        console.log('Collision detected:', collision);
+      }
+    });
+
+    if (this.playerId === null) {
+      this.gameService.getId();
+    }
   }
 
-  onFieldClick(event: MouseEvent) {
-    if (!this.selected) return;
-    const rect = (event.currentTarget as Element).getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    this.selected.x = Math.round(x);
-    this.selected.y = Math.round(y);
+  ngOnDestroy(): void {
+    if (this.roomSubscription) {
+      this.roomSubscription.unsubscribe();
+    }
+    if (this.configSubscription) {
+      this.configSubscription.unsubscribe();
+    }
+    if (this.idSubscription) {
+      this.idSubscription.unsubscribe();
+    }
+    if (this.gameOverSubscription) {
+      this.gameOverSubscription.unsubscribe();
+    }
+    if (this.collisionSubscription) {
+      this.collisionSubscription.unsubscribe();
+    }
+  }
+
+  restart(): void {
+    this.gameService.restartGame();
+    this.router.navigate(['/lobby']);
+  }
+
+  getAllCharacters(): (models.Character & { team: models.TeamType | null; label: string })[] {
+    if (!this.room) {
+      return [];
+    }
+    return this.room.players
+      .flatMap((player) =>
+        player.characters.map((character, index) => {
+          let label = 'CS';
+          if (index === 0) label = 'K';
+          else if (index === 1 || index === 2) label = 'V';
+
+          return {
+            ...character,
+            team: player.team,
+            label: label,
+          };
+        }),
+      )
+      .filter((c) => c.team === models.TeamType.Red || c.team === models.TeamType.Blue);
+  }
+
+  leaveRoom(): void {
+    this.gameService.leaveRoom();
+    this.router.navigate(['/']);
   }
 }
