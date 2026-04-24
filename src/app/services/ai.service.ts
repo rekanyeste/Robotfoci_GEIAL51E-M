@@ -1,18 +1,16 @@
 import { Injectable } from '@angular/core';
 import * as models from '../models/robosoccer.models';
 import { SoccerAIEngine, Vector2D } from './steering';
-import { GameContext, calculateTarget, TeamState } from './roles';
+import { GameContext, calculateTarget, getRole } from './roles';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AiService {
-  private currentRoomId: number | null = null;
-  private wasStarted: boolean = false;
-  private matchStartTime: number = 0;
-  private matchSpeeds: number[] = [10, 10, 10, 10, 10];
   private engine = new SoccerAIEngine();
-  constructor() {}
+  private wallEnterTime: number = 0;
+  private rescueRoutineActive: boolean = false;
+  private rescuePhase: 'PREPARE' | 'STRIKE' = 'PREPARE';
+  private rescueStartTime: number = 0;
+  private rescueKickerId: number | null = null;
 
   public calculateMovements(
     room: models.Room,
@@ -20,63 +18,91 @@ export class AiService {
     playerId: number,
   ): { x: number; y: number }[] | null {
     const myPlayer = room.players.find((p) => p.id === playerId);
-    if (!myPlayer || !myPlayer.characters || myPlayer.characters.length === 0) return null;
-
-    if (this.currentRoomId !== room.roomId) {
-      this.currentRoomId = room.roomId;
-      this.wasStarted = false;
-    }
-
-    if (room.isStarted && !this.wasStarted) {
-      this.wasStarted = true;
-      this.matchStartTime = Date.now();
-      for (let i = 0; i < 5; i++) {
-        this.matchSpeeds[i] = 12 + (Math.random() * 4 - 2);
-      }
-    } else if (!room.isStarted) {
-      this.wasStarted = false;
-      return myPlayer.characters.map(() => ({ x: 0, y: 0 }));
-    }
+    if (!myPlayer || !myPlayer.characters.length || !room.isStarted) return null;
 
     const dir = myPlayer.team === models.TeamType.Blue ? 1 : -1;
-    const fieldWidth = config.fieldWidth;
-    const fieldHeight = config.fieldHeight;
-    const ownGoalX = dir === 1 ? 0 : fieldWidth;
-    const enemyGoalX = dir === 1 ? fieldWidth : 0;
-    const isAttacking =
-      (dir === 1 && room.ball.x > fieldWidth / 2) || (dir === -1 && room.ball.x < fieldWidth / 2);
-    const teamState: TeamState = isAttacking ? 'ATTACK' : 'DEFEND';
-    const chaserObj = myPlayer.characters.reduce((best: any, c: any) => {
-      const d = Math.hypot(c.x - room.ball.x, c.y - room.ball.y);
-      return !best || d < best.d ? { c, d } : best;
-    }, null);
-    const chaserId = chaserObj ? chaserObj.c.id : -1;
+    const { fieldWidth, fieldHeight } = config;
+    const isNearXWall = room.ball.x < 150 || room.ball.x > fieldWidth - 150;
+    const isNearYWall = room.ball.y < 150 || room.ball.y > fieldHeight - 150;
+    const isBallInCorner = isNearXWall && isNearYWall;
+
+    if (isBallInCorner) {
+      if (this.wallEnterTime === 0) this.wallEnterTime = Date.now();
+      if (Date.now() - this.wallEnterTime > 1500 && !this.rescueRoutineActive) {
+        this.rescueRoutineActive = true;
+        this.rescueStartTime = Date.now();
+        this.rescuePhase = 'PREPARE';
+        const isHomeTeam =
+          (dir === 1 && room.ball.x < fieldWidth / 2) ||
+          (dir === -1 && room.ball.x > fieldWidth / 2);
+        if (isHomeTeam) {
+          let bestDist = Infinity;
+          let kickerId = -1;
+          myPlayer.characters.forEach((c, index) => {
+            if (getRole(index) !== 'GK') {
+              const d = Math.hypot(c.x - room.ball.x, c.y - room.ball.y);
+              if (d < bestDist) {
+                bestDist = d;
+                kickerId = c.id;
+              }
+            }
+          });
+          this.rescueKickerId = kickerId !== -1 ? kickerId : myPlayer.characters[0].id;
+        } else {
+          this.rescueKickerId = null;
+        }
+      }
+    } else {
+      this.wallEnterTime = 0;
+      this.rescueRoutineActive = false;
+      this.rescueKickerId = null;
+    }
+    if (this.rescueRoutineActive) {
+      const elapsed = Date.now() - this.rescueStartTime;
+      if (elapsed < 1000) this.rescuePhase = 'PREPARE';
+      else if (elapsed < 1600) this.rescuePhase = 'STRIKE';
+      else this.rescueStartTime = Date.now();
+    }
+    let bestScore = Infinity;
+    let chaserId = -1;
+    myPlayer.characters.forEach((c, index) => {
+      const dist = Math.hypot(c.x - room.ball.x, c.y - room.ball.y);
+      const role = getRole(index);
+      let weight = role === 'ATT' || role === 'SUP' ? 0.7 : 2.0;
+      if (role === 'GK') weight = dist < 250 ? 0.4 : 10.0;
+
+      if (dist * weight < bestScore) {
+        bestScore = dist * weight;
+        chaserId = c.id;
+      }
+    });
+
     const ctx = new GameContext(
       room.ball,
       dir,
-      ownGoalX,
-      enemyGoalX,
+      dir === 1 ? 0 : fieldWidth,
+      dir === 1 ? fieldWidth : 0,
       fieldWidth,
       fieldHeight,
-      teamState,
       chaserId,
+      myPlayer.characters,
     );
-
-    const movements = myPlayer.characters.map((character, index) => {
+    (ctx as any).rescuePhase = this.rescueRoutineActive ? this.rescuePhase : 'NONE';
+    (ctx as any).rescueKickerId = this.rescueKickerId;
+    return myPlayer.characters.map((character, index) => {
       const target = calculateTarget(character, index, ctx);
-      const isActive = character.id === chaserId;
+      const isActive = this.rescueRoutineActive
+        ? character.id === this.rescueKickerId
+        : character.id === chaserId;
 
       return this.engine.updateCharacter(
         character,
         target,
         myPlayer.characters,
-        this.matchSpeeds[index],
         room.ball,
-        enemyGoalX,
+        ctx.enemyGoalX,
         isActive,
       );
     });
-
-    return movements;
   }
 }
