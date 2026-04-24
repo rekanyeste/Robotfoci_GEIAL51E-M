@@ -30,13 +30,17 @@
       ></rect>
 
       <g *ngIf="room">
-        <circle
-          *ngFor="let p of getAllCharacters()"
-          [attr.cx]="p.x"
-          [attr.cy]="p.y"
-          [attr.r]="config.playerRadius"
-          [attr.fill]="p.team"
-        ></circle>
+        <!-- Játékosok és feliratok kirajzolása -->
+        <ng-container *ngFor="let p of getAllCharacters()">
+          <circle
+            [attr.cx]="p.x"
+            [attr.cy]="p.y"
+            [attr.r]="config.playerRadius"
+            [attr.fill]="p.team"
+          ></circle>
+          <text [attr.x]="p.x" [attr.y]="p.y" class="player-label">{{ p.label }}</text>
+        </ng-container>
+
         <circle
           [attr.cx]="room.ball.x"
           [attr.cy]="room.ball.y"
@@ -51,10 +55,13 @@
   <div *ngIf="winner" class="end-screen-overlay">
     <div class="end-screen-content">
       <h1 class="winner-text">WINNER</h1>
-      <div class="winner-banner" [style.background-color]="winner === TeamType.Red ? '#FF0000' : '#0000FF'">
+      <div
+        class="winner-banner"
+        [style.background-color]="winner === TeamType.Red ? '#FF0000' : '#0000FF'"
+      >
         {{ winner | uppercase }} TEAM
       </div>
-      
+
       <div class="final-score" *ngIf="room">
         <p class="score-label">Final Score</p>
         <p class="score-values">Red: {{ room.score.red }} - Blue: {{ room.score.blue }}</p>

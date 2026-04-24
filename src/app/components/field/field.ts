@@ -1,9 +1,17 @@
-import { Component, OnDestroy, OnInit, HostListener, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  HostListener,
+  ChangeDetectorRef,
+  NgZone,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameService } from '../../services/game.service';
 import * as models from '../../models/robosoccer.models';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
+import { AiService } from '../../services/ai.service';
 
 @Component({
   selector: 'app-field',
@@ -20,24 +28,34 @@ export class Field implements OnInit, OnDestroy {
   public TeamType = models.TeamType;
   public leftGoalColor = '#0000FF';
   public rightGoalColor = '#FF0000';
-
   private roomSubscription: Subscription | undefined;
   private configSubscription: Subscription | undefined;
   private idSubscription: Subscription | undefined;
   private gameOverSubscription: Subscription | undefined;
   private collisionSubscription: Subscription | undefined;
 
-  private acceleration = { x: 0, y: 0 };
-  private keysPressed: { [key: string]: boolean } = {};
-  private readonly ACCELERATION_STEP = 10;
-  private movementIntervalId: number | null = null;
-
-  constructor(private gameService: GameService, private cdr: ChangeDetectorRef, private router: Router) {}
+  constructor(
+    private gameService: GameService,
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private aiService: AiService,
+    private ngZone: NgZone,
+  ) {}
 
   ngOnInit() {
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
       this.room = room;
       this.cdr.detectChanges();
+      if (this.playerId !== null && this.room && this.config) {
+        const coordinates = this.aiService.calculateMovements(
+          this.room,
+          this.config,
+          this.playerId,
+        );
+        if (coordinates && coordinates.length > 0) {
+          this.gameService.sendMovement(coordinates);
+        }
+      }
     });
 
     this.configSubscription = this.gameService.configState$.subscribe((config) => {
@@ -58,7 +76,6 @@ export class Field implements OnInit, OnDestroy {
     this.collisionSubscription = this.gameService.collisionState$.subscribe((collision) => {
       if (collision) {
         console.log('Collision detected:', collision);
-        // Here you could add logic to show a visual effect for the collision
       }
     });
 
@@ -83,81 +100,6 @@ export class Field implements OnInit, OnDestroy {
     if (this.collisionSubscription) {
       this.collisionSubscription.unsubscribe();
     }
-    if (this.movementIntervalId !== null) {
-      clearInterval(this.movementIntervalId);
-    }
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent) {
-    const key = event.key.toLowerCase();
-    if (['w', 'a', 's', 'd'].indexOf(key) === -1) return;
-
-    if (this.keysPressed[key]) {
-      return; // Key already down
-    }
-    this.keysPressed[key] = true;
-    this.updateAccelerationAndInterval();
-  }
-
-  @HostListener('window:keyup', ['$event'])
-  onKeyUp(event: KeyboardEvent) {
-    const key = event.key.toLowerCase();
-    if (['w', 'a', 's', 'd'].indexOf(key) === -1) return;
-    
-    this.keysPressed[key] = false;
-    this.updateAccelerationAndInterval();
-  }
-
-  private updateAccelerationAndInterval() {
-    let ax = 0;
-    let ay = 0;
-
-    const up = this.keysPressed['w'];
-    const down = this.keysPressed['s'];
-    const left = this.keysPressed['a'];
-    const right = this.keysPressed['d'];
-
-    if (up && !down) {
-      ay = -this.ACCELERATION_STEP;
-    } else if (down && !up) {
-      ay = this.ACCELERATION_STEP;
-    }
-
-    if (left && !right) {
-      ax = -this.ACCELERATION_STEP;
-    } else if (right && !left) {
-      ax = this.ACCELERATION_STEP;
-    }
-
-    this.acceleration.x = ax;
-    this.acceleration.y = ay;
-
-    const isMoving = ax !== 0 || ay !== 0;
-
-    if (isMoving && this.movementIntervalId === null) {
-      this.movementIntervalId = window.setInterval(() => {
-        if (this.playerId !== null && this.room) {
-          const player = this.room.players.find(p => p.id === this.playerId);
-          if (player) {
-            const coordinates = player.characters
-              .sort((a, b) => a.id - b.id)
-              .map(() => ({ x: this.acceleration.x, y: this.acceleration.y }));
-            this.gameService.sendMovement(coordinates);
-          }
-        }
-      }, 33); // ~30 FPS
-    } else if (!isMoving && this.movementIntervalId !== null) {
-      clearInterval(this.movementIntervalId);
-      this.movementIntervalId = null;
-      if (this.playerId !== null && this.room) {
-        const player = this.room.players.find(p => p.id === this.playerId);
-        if (player) {
-          const coordinates = player.characters.map(() => ({ x: 0, y: 0 }));
-          this.gameService.sendMovement(coordinates);
-        }
-      }
-    }
   }
 
   restart(): void {
@@ -165,16 +107,25 @@ export class Field implements OnInit, OnDestroy {
     this.router.navigate(['/lobby']);
   }
 
-  getAllCharacters(): (models.Character & { team: models.TeamType | null })[] {
+  getAllCharacters(): (models.Character & { team: models.TeamType | null; label: string })[] {
     if (!this.room) {
       return [];
     }
-    return this.room.players.flatMap(player =>
-      player.characters.map(character => ({
-        ...character,
-        team: player.team
-      }))
-    ).filter(c => c.team === models.TeamType.Red || c.team === models.TeamType.Blue);
+    return this.room.players
+      .flatMap((player) =>
+        player.characters.map((character, index) => {
+          let label = 'CS';
+          if (index === 0) label = 'K';
+          else if (index === 1 || index === 2) label = 'V';
+
+          return {
+            ...character,
+            team: player.team,
+            label: label,
+          };
+        }),
+      )
+      .filter((c) => c.team === models.TeamType.Red || c.team === models.TeamType.Blue);
   }
 
   leaveRoom(): void {

@@ -1,31 +1,90 @@
-<div class="lobby-container" *ngIf="room">
-  <h1>Room ID: {{ room.roomId }}</h1>
-
-  <div class="teams">
-    <div class="team">
-      <h2>Team Red</h2>
-      <ul>
-        <li *ngFor="let player of getTeam(TeamType.Red)">{{ player.name }}</li>
-      </ul>
-      <button (click)="joinTeam(TeamType.Red)">Join Team Red</button>
+@if (room) {
+  <div class="container mt-4">
+    <div class="row mb-4 align-items-center">
+      <div class="col-md-3">
+        <button class="btn btn-outline-danger shadow-sm" (click)="leaveRoom()">
+          &larr; Leave Room
+        </button>
+      </div>
+      <div class="col-md-6 text-center">
+        <h1 class="display-5 mb-0">
+          Room ID: <span class="text-primary">{{ room.roomId }}</span>
+        </h1>
+      </div>
+      <div class="col-md-3"></div>
     </div>
 
-    <div class="team">
-      <h2>Team Blue</h2>
-      <ul>
-        <li *ngFor="let player of getTeam(TeamType.Blue)">{{ player.name }}</li>
-      </ul>
-      <button (click)="joinTeam(TeamType.Blue)">Join Team Blue</button>
+    <div class="row mb-4">
+      <!-- Team Red -->
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-danger">
+          <div class="card-header bg-danger text-white text-center">
+            <h2 class="h5 mb-0">Team Red</h2>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              @for (player of getTeam(TeamType.Red); track $index) {
+                <li class="list-group-item text-center">{{ player.name }}</li>
+              }
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent border-top-0">
+            <button class="btn btn-outline-danger w-100" (click)="joinTeam(TeamType.Red)">
+              Join Team Red
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Blue -->
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-primary">
+          <div class="card-header bg-primary text-white text-center">
+            <h2 class="h5 mb-0">Team Blue</h2>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              @for (player of getTeam(TeamType.Blue); track $index) {
+                <li class="list-group-item text-center">{{ player.name }}</li>
+              }
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent border-top-0">
+            <button class="btn btn-outline-primary w-100" (click)="joinTeam(TeamType.Blue)">
+              Join Team Blue
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spectators -->
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-secondary">
+          <div class="card-header bg-secondary text-white text-center">
+            <h2 class="h5 mb-0">Spectators</h2>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              @for (player of getSpectators(); track $index) {
+                <li class="list-group-item text-center">{{ player.name }}</li>
+              }
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent border-top-0">
+            <button class="btn btn-outline-secondary w-100" (click)="joinTeam(TeamType.Spectator)">
+              Join Spectators
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="team">
-      <h2>Spectators</h2>
-      <ul>
-        <li *ngFor="let player of getSpectators()">{{ player.name }}</li>
-      </ul>
-      <button (click)="joinTeam(TeamType.Spectator)">Join Spectators</button>
+    <div class="row">
+      <div class="col text-center">
+        <button class="btn btn-success btn-lg px-5 shadow-sm" (click)="startGame()">
+          Start Game
+        </button>
+      </div>
     </div>
   </div>
-
-  <button (click)="startGame()">Start Game</button>
-</div>
+}

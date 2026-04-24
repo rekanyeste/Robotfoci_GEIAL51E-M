@@ -10,7 +10,7 @@ import { TeamType } from '../../models/robosoccer.models';
   selector: 'app-lobby',
   imports: [CommonModule],
   templateUrl: './lobby.component.html',
-  styleUrls: ['./lobby.component.scss']
+  styleUrls: ['./lobby.component.scss'],
 })
 export class LobbyComponent implements OnInit, OnDestroy {
   room: models.Room | null = null;
@@ -19,10 +19,14 @@ export class LobbyComponent implements OnInit, OnDestroy {
   private idSubscription: Subscription | undefined;
   public TeamType = TeamType;
 
-  constructor(private router: Router, private gameService: GameService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private router: Router,
+    private gameService: GameService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
-    this.roomSubscription = this.gameService.roomState$.subscribe(room => {
+    this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
       this.room = room;
       if (!room) {
         this.router.navigate(['/']);
@@ -35,7 +39,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
 
-    this.idSubscription = this.gameService.idState$.subscribe(idMessage => {
+    this.idSubscription = this.gameService.idState$.subscribe((idMessage) => {
       this.playerId = idMessage.playerId;
       this.cdr.detectChanges();
     });
@@ -49,11 +53,13 @@ export class LobbyComponent implements OnInit, OnDestroy {
   }
 
   getTeam(team: models.TeamType): models.Player[] {
-    return this.room ? this.room.players.filter(p => p.team === team) : [];
+    return this.room ? this.room.players.filter((p) => p.team === team) : [];
   }
 
   getSpectators(): models.Player[] {
-    return this.room ? this.room.players.filter(p => p.team === TeamType.Spectator || p.team === null) : [];
+    return this.room
+      ? this.room.players.filter((p) => p.team === TeamType.Spectator || p.team === null)
+      : [];
   }
 
   joinTeam(team: models.TeamType): void {
