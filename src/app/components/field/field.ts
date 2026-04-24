@@ -16,7 +16,7 @@ import { AiService } from '../../services/ai.service';
 @Component({
   selector: 'app-field',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './field.html',
   styleUrls: ['./field.scss'],
 })

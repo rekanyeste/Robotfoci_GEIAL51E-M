@@ -11,15 +11,6 @@
   font-size: 24px;
   font-weight: bold;
 }
-
-.player-label {
-  font-size: 22px;
-  font-weight: bold;
-  fill: white;
-  text-anchor: middle; /* Vízszintes középre igazítás */
-  dominant-baseline: central; /* Függőleges középre igazítás */
-  pointer-events: none; /* A szöveg ne zavarja az egér eseményeket */
-}
 .end-screen-overlay {
   position: absolute;
   top: 0;
