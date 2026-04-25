@@ -5,10 +5,11 @@ import { NgOptimizedImage } from '@angular/common';
 import { GameService } from '../../services/game.service';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { LeaderboardComponent } from '../leaderboard.component/leaderboard.component';
 
 @Component({
   selector: 'app-home.component',
-  imports: [CommonModule, NgOptimizedImage, FormsModule],
+  imports: [CommonModule, NgOptimizedImage, FormsModule, LeaderboardComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -19,7 +20,10 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private roomSubscription: Subscription | undefined;
 
-  constructor(private router: Router, private gameService: GameService) {}
+  constructor(
+    private router: Router,
+    private gameService: GameService,
+  ) {}
 
   ngOnInit(): void {
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
@@ -70,7 +74,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   leaderboard(): void {
-    this.setActive('leader');
+    this.router.navigate(['/leaderboard']);
+    this.activeButton = this.activeButton === 'leader' ? 'single' : 'leader';
   }
 
   quit(): void {

@@ -1,76 +1,172 @@
 <div id="container">
-  <!-- GAME VIEW -->
-  <div *ngIf="room && room.isStarted && config">
-    <div class="scoreboard">
-      <p>Red: {{ room.score.red }} - Blue: {{ room.score.blue }}</p>
-    </div>
+  @if (room && room.isStarted && config) {
+    <div class="game-view-wrapper">
+      <div class="modern-scoreboard">
+        <div class="team-color blue"></div>
+        <div class="score-text">
+          <span class="score">{{ room.score.blue }} - {{ room.score.red }}</span>
+          <span class="time">0:00</span>
+        </div>
+        <div class="team-color red"></div>
+      </div>
 
-    <svg
-      [attr.width]="config.fieldWidth"
-      [attr.height]="config.fieldHeight"
-      id="fieldGreen"
-      style="border: 3px solid black; background-color: green"
-    >
-      <!-- Blue Goal (Left) -->
-      <rect
-        x="0"
-        [attr.y]="config.goalMinY"
-        width="10"
-        [attr.height]="config.goalMaxY - config.goalMinY"
-        [attr.fill]="leftGoalColor"
-      ></rect>
-
-      <!-- Red Goal (Right) -->
-      <rect
-        [attr.x]="config.fieldWidth - 10"
-        [attr.y]="config.goalMinY"
-        width="10"
-        [attr.height]="config.goalMaxY - config.goalMinY"
-        [attr.fill]="rightGoalColor"
-      ></rect>
-
-      <g *ngIf="room">
-        <!-- Játékosok és feliratok kirajzolása -->
-        <ng-container *ngFor="let p of getAllCharacters()">
-          <circle
-            [attr.cx]="p.x"
-            [attr.cy]="p.y"
-            [attr.r]="config.playerRadius"
-            [attr.fill]="p.team"
-          ></circle>
-          <text [attr.x]="p.x" [attr.y]="p.y" class="player-label">{{ p.label }}</text>
-        </ng-container>
-
-        <circle
-          [attr.cx]="room.ball.x"
-          [attr.cy]="room.ball.y"
-          [attr.r]="config.ballRadius"
-          fill="orange"
-        ></circle>
-      </g>
-    </svg>
-  </div>
-
-  <!-- END SCREEN OVERLAY -->
-  <div *ngIf="winner" class="end-screen-overlay">
-    <div class="end-screen-content">
-      <h1 class="winner-text">WINNER</h1>
       <div
-        class="winner-banner"
-        [style.background-color]="winner === TeamType.Red ? '#FF0000' : '#0000FF'"
+        class="pitch-background"
+        [style.width.px]="config.fieldWidth"
+        [style.height.px]="config.fieldHeight"
       >
-        {{ winner | uppercase }} TEAM
-      </div>
+        <svg
+          [attr.width]="config.fieldWidth"
+          [attr.height]="config.fieldHeight"
+          id="fieldGreen"
+          style="background: transparent"
+        >
+          <line
+            [attr.x1]="config.fieldWidth / 2"
+            y1="0"
+            [attr.x2]="config.fieldWidth / 2"
+            [attr.y2]="config.fieldHeight"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="3"
+          ></line>
 
-      <div class="final-score" *ngIf="room">
-        <p class="score-label">Final Score</p>
-        <p class="score-values">Red: {{ room.score.red }} - Blue: {{ room.score.blue }}</p>
-      </div>
+          <circle
+            [attr.cx]="config.fieldWidth / 2"
+            [attr.cy]="config.fieldHeight / 2"
+            r="60"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="3"
+            fill="none"
+          ></circle>
 
-      <div class="actions">
-        <button class="btn-restart" (click)="restart()">RESTART GAME</button>
-        <button class="btn-leave" (click)="leaveRoom()">LEAVE ROOM</button>
+          <circle
+            [attr.cx]="config.fieldWidth / 2"
+            [attr.cy]="config.fieldHeight / 2"
+            r="4"
+            fill="rgba(255,255,255,0.5)"
+          ></circle>
+
+          <rect
+            x="0"
+            [attr.y]="config.fieldHeight / 2 - 100"
+            width="80"
+            height="200"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="3"
+            fill="none"
+          ></rect>
+          <rect
+            x="0"
+            [attr.y]="config.fieldHeight / 2 - 40"
+            width="30"
+            height="80"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="3"
+            fill="none"
+          ></rect>
+
+          <rect
+            [attr.x]="config.fieldWidth - 80"
+            [attr.y]="config.fieldHeight / 2 - 100"
+            width="80"
+            height="200"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="3"
+            fill="none"
+          ></rect>
+          <rect
+            [attr.x]="config.fieldWidth - 30"
+            [attr.y]="config.fieldHeight / 2 - 40"
+            width="30"
+            height="80"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="3"
+            fill="none"
+          ></rect>
+
+          <rect
+            x="0"
+            [attr.y]="config.goalMinY"
+            width="15"
+            [attr.height]="config.goalMaxY - config.goalMinY"
+            fill="#4da6ff"
+            stroke="white"
+            stroke-width="2"
+          ></rect>
+
+          <rect
+            [attr.x]="config.fieldWidth - 15"
+            [attr.y]="config.goalMinY"
+            width="15"
+            [attr.height]="config.goalMaxY - config.goalMinY"
+            fill="#ff4d4d"
+            stroke="white"
+            stroke-width="2"
+          ></rect>
+
+          @if (room) {
+            <g>
+              @for (p of getAllCharacters(); track $index) {
+                <circle
+                  [attr.cx]="p.x"
+                  [attr.cy]="p.y"
+                  [attr.r]="config.playerRadius"
+                  [attr.fill]="p.team === TeamType.Red ? '#ff4d4d' : '#4da6ff'"
+                  stroke="#222"
+                  stroke-width="2"
+                ></circle>
+
+                <text
+                  [attr.x]="p.x"
+                  [attr.y]="p.y - config.playerRadius - 5"
+                  text-anchor="middle"
+                  fill="white"
+                  font-weight="bold"
+                  font-size="12px"
+                  style="text-shadow: 1px 1px 2px black"
+                >
+                  {{ p.label }}
+                </text>
+              }
+
+              <circle
+                [attr.cx]="room.ball.x"
+                [attr.cy]="room.ball.y"
+                [attr.r]="config.ballRadius"
+                fill="white"
+                stroke="#222"
+                stroke-width="2"
+              ></circle>
+            </g>
+          }
+        </svg>
       </div>
     </div>
-  </div>
+  }
+
+  @if (winner) {
+    <div class="end-screen-overlay">
+      <div class="end-screen-content">
+        <h1 class="winner-text">WINNER</h1>
+        <div
+          class="winner-banner"
+          [style.background-color]="winner === TeamType.Red ? '#FF0000' : '#0000FF'"
+        >
+          {{ winner | uppercase }} TEAM
+        </div>
+
+        @if (room) {
+          <div class="final-score">
+            <p class="score-label">Final Score</p>
+            <p class="score-values">Red: {{ room.score.red }} - Blue: {{ room.score.blue }}</p>
+          </div>
+        }
+
+        <div class="actions">
+          <button class="btn-restart" (click)="restart()">RESTART GAME</button>
+          <button class="btn-leave" (click)="leaveRoom()">LEAVE ROOM</button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

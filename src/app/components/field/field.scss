@@ -53,3 +53,85 @@
   background: #f44336;
   color: white;
 }
+.pitch-background {
+  border: 4px solid white;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background: repeating-linear-gradient(
+    to right,
+    #4ce074,
+    #4ce074 40px,
+    #3bcf61 40px,
+    #3bcf61 80px
+  );
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-view-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.pitch-background {
+  border: 4px solid white;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background: repeating-linear-gradient(
+    to right,
+    #4ce074,
+    #4ce074 40px,
+    #3bcf61 40px,
+    #3bcf61 80px
+  );
+}
+
+.modern-scoreboard {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(45, 50, 55, 0.95);
+  padding: 8px 25px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.score-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', sans-serif;
+}
+
+.score {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.time {
+  font-size: 14px;
+  color: #a0a0a0;
+  margin-top: -3px;
+}
+
+.team-color {
+  width: 4px;
+  height: 30px;
+  border-radius: 2px;
+}
+.team-color.red {
+  background-color: #ff4d4d;
+}
+.team-color.blue {
+  background-color: #4da6ff;
+}

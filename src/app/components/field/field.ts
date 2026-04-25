@@ -12,6 +12,7 @@ import * as models from '../../models/robosoccer.models';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { AiService } from '../../services/ai.service';
+import { LeaderboardService } from '../../services/leaderboard.service';
 
 @Component({
   selector: 'app-field',
@@ -40,13 +41,14 @@ export class Field implements OnInit, OnDestroy {
     private router: Router,
     private aiService: AiService,
     private ngZone: NgZone,
+    private leaderboardService: LeaderboardService,
   ) {}
 
   ngOnInit() {
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
       this.room = room;
       this.cdr.detectChanges();
-      if (this.playerId !== null && this.room && this.config) {
+      if (this.playerId !== null && this.room && this.config && this.room.isStarted) {
         const coordinates = this.aiService.calculateMovements(
           this.room,
           this.config,
@@ -69,10 +71,19 @@ export class Field implements OnInit, OnDestroy {
     });
 
     this.gameOverSubscription = this.gameService.gameOverState$.subscribe((winner) => {
-      this.winner = winner;
-      this.cdr.detectChanges();
+      if (winner !== null && this.winner === null && this.room) {
+        this.winner = winner;
+        this.cdr.detectChanges();
+        const redPlayer = this.room.players.find((p) => p.team === models.TeamType.Red);
+        const bluePlayer = this.room.players.find((p) => p.team === models.TeamType.Blue);
+        const isRedWinner = winner === models.TeamType.Red;
+        const winnerName = isRedWinner ? redPlayer?.name : bluePlayer?.name;
+        const loserName = isRedWinner ? bluePlayer?.name : redPlayer?.name;
+        if (winnerName && loserName) {
+          this.leaderboardService.updateMatch(winnerName, loserName, 1, 0);
+        }
+      }
     });
-
     this.collisionSubscription = this.gameService.collisionState$.subscribe((collision) => {
       if (collision) {
         console.log('Collision detected:', collision);
@@ -100,6 +111,8 @@ export class Field implements OnInit, OnDestroy {
     if (this.collisionSubscription) {
       this.collisionSubscription.unsubscribe();
     }
+    if (this.roomSubscription) this.roomSubscription.unsubscribe();
+    if (this.gameOverSubscription) this.gameOverSubscription.unsubscribe();
   }
 
   restart(): void {

@@ -1,0 +1,75 @@
+<div class="leaderboard-wrapper">
+  <div class="glass-container">
+    <div class="brand-side">
+      <div class="icon-box">
+        <span class="ball-emoji">⚽</span>
+      </div>
+      <h1 class="main-title">
+        Tournament <br />
+        <span class="sub-title">Scores</span>
+      </h1>
+    </div>
+
+    <div class="stats-side">
+      <div class="table-responsive">
+        <table class="modern-table">
+          <thead>
+            <tr>
+              <th>NO</th>
+              <th>TEAM</th>
+              <th>P</th>
+              <th>W</th>
+              <th>D</th>
+              <th>L</th>
+              <th>F</th>
+              <th>A</th>
+              <th>+/-</th>
+              <th>PTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (team of teams; track team.name) {
+              <tr class="table-row">
+                <td class="no-col">{{ team.no }}</td>
+                <td class="team-name">{{ team.name }}</td>
+                <td>{{ team.p }}</td>
+                <td>{{ team.w }}</td>
+                <td>{{ team.d }}</td>
+                <td>{{ team.l }}</td>
+                <td>{{ team.f }}</td>
+                <td>{{ team.a }}</td>
+                <td>{{ team.diff }}</td>
+                <td class="pts-col">{{ team.pts }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10" class="empty-msg">No data</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer-legend">
+        <div class="legend-group">
+          <span>P: PLAYED</span> <br />
+          <span>W: WON</span> <br />
+          <span>D: DRAWN</span> <br />
+        </div>
+        <div class="legend-group">
+          <span>L: LOST</span><br />
+          <span>F: FOR</span><br />
+          <span>A: AGAINST</span><br />
+        </div>
+        <div class="legend-group">
+          <span>+/-: GOAL DIFFERENCE</span><br />
+          <span>PTS: POINTS</span><br />
+        </div>
+      </div>
+
+      <div class="button-container">
+        <button class="back-btn" (click)="goBack()"><span class="arrow">←</span> Main Menu</button>
+      </div>
+    </div>
+  </div>
+</div>
