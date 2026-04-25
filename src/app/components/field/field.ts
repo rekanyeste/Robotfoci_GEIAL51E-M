@@ -2,17 +2,17 @@ import {
   Component,
   OnDestroy,
   OnInit,
-  HostListener,
   ChangeDetectorRef,
-  NgZone,
+  Inject,
+  PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { GameService } from '../../services/game.service';
-import * as models from '../../models/robosoccer.models';
-import { Subscription } from 'rxjs';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { GameService } from '../../services/game.service';
 import { AiService } from '../../services/ai.service';
 import { LeaderboardService } from '../../services/leaderboard.service';
+import * as models from '../../models/robosoccer.models';
 
 @Component({
   selector: 'app-field',
@@ -26,9 +26,12 @@ export class Field implements OnInit, OnDestroy {
   config: models.GameConfigMessage | null = null;
   playerId: number | null = null;
   winner: models.TeamType | null = null;
+  gameTime: number = 0;
+  displayCountdown: number = 0;
+  private timerInterval: any;
+  private previousTicks: number = 0;
+  private initialTicks: number = 0;
   public TeamType = models.TeamType;
-  public leftGoalColor = '#0000FF';
-  public rightGoalColor = '#FF0000';
   private roomSubscription: Subscription | undefined;
   private configSubscription: Subscription | undefined;
   private idSubscription: Subscription | undefined;
@@ -40,15 +43,47 @@ export class Field implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private router: Router,
     private aiService: AiService,
-    private ngZone: NgZone,
     private leaderboardService: LeaderboardService,
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit() {
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
       this.room = room;
+      if (this.winner) {
+        this.displayCountdown = 0;
+        this.cdr.detectChanges();
+        return;
+      }
+      const rawTicks = this.room?.countdownTicks ?? 0;
+      if (rawTicks > 0) {
+        if (this.initialTicks === 0 || rawTicks > this.initialTicks) {
+          this.initialTicks = rawTicks;
+        }
+
+        let currentSecond = Math.ceil((rawTicks / this.initialTicks) * 5);
+        if (currentSecond < 1) currentSecond = 1;
+        if (currentSecond > 5) currentSecond = 5;
+        if (this.displayCountdown !== currentSecond) {
+          this.displayCountdown = currentSecond;
+        }
+      } else if (rawTicks === 0 && this.room?.isStarted) {
+        this.displayCountdown = 0;
+        this.initialTicks = 0;
+        if (!this.timerInterval && !this.winner) {
+          this.startTimer();
+        }
+      }
+
+      this.previousTicks = rawTicks;
       this.cdr.detectChanges();
-      if (this.playerId !== null && this.room && this.config && this.room.isStarted) {
+      if (
+        this.playerId !== null &&
+        this.room?.isStarted &&
+        this.config &&
+        rawTicks === 0 &&
+        !this.winner
+      ) {
         const coordinates = this.aiService.calculateMovements(
           this.room,
           this.config,
@@ -71,22 +106,21 @@ export class Field implements OnInit, OnDestroy {
     });
 
     this.gameOverSubscription = this.gameService.gameOverState$.subscribe((winner) => {
-      if (winner !== null && this.winner === null && this.room) {
+      if (winner !== null && this.winner === null) {
         this.winner = winner;
+        this.displayCountdown = 0;
+        this.stopTimer();
         this.cdr.detectChanges();
-        const redPlayer = this.room.players.find((p) => p.team === models.TeamType.Red);
-        const bluePlayer = this.room.players.find((p) => p.team === models.TeamType.Blue);
-        const isRedWinner = winner === models.TeamType.Red;
-        const winnerName = isRedWinner ? redPlayer?.name : bluePlayer?.name;
-        const loserName = isRedWinner ? bluePlayer?.name : redPlayer?.name;
-        if (winnerName && loserName) {
-          this.leaderboardService.updateMatch(winnerName, loserName, 1, 0);
+        if (this.room) {
+          const redPlayer = this.room.players.find((p) => p.team === models.TeamType.Red);
+          const bluePlayer = this.room.players.find((p) => p.team === models.TeamType.Blue);
+          const isRedWinner = winner === models.TeamType.Red;
+          const winnerName = isRedWinner ? redPlayer?.name : bluePlayer?.name;
+          const loserName = isRedWinner ? bluePlayer?.name : redPlayer?.name;
+          if (winnerName && loserName) {
+            this.leaderboardService.updateMatch(winnerName, loserName, 1, 0);
+          }
         }
-      }
-    });
-    this.collisionSubscription = this.gameService.collisionState$.subscribe((collision) => {
-      if (collision) {
-        console.log('Collision detected:', collision);
       }
     });
 
@@ -95,46 +129,66 @@ export class Field implements OnInit, OnDestroy {
     }
   }
 
+  private startTimer() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.timerInterval = setInterval(() => {
+        if (this.room?.isStarted && this.displayCountdown === 0 && !this.winner) {
+          this.gameTime++;
+          this.cdr.detectChanges();
+        }
+      }, 1000);
+    }
+  }
+
+  private stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+  }
+
+  get formattedTime(): string {
+    const minutes = Math.floor(this.gameTime / 60);
+    const seconds = this.gameTime % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  }
+
   ngOnDestroy(): void {
-    if (this.roomSubscription) {
-      this.roomSubscription.unsubscribe();
-    }
-    if (this.configSubscription) {
-      this.configSubscription.unsubscribe();
-    }
-    if (this.idSubscription) {
-      this.idSubscription.unsubscribe();
-    }
-    if (this.gameOverSubscription) {
-      this.gameOverSubscription.unsubscribe();
-    }
-    if (this.collisionSubscription) {
-      this.collisionSubscription.unsubscribe();
-    }
-    if (this.roomSubscription) this.roomSubscription.unsubscribe();
-    if (this.gameOverSubscription) this.gameOverSubscription.unsubscribe();
+    this.stopTimer();
+    this.roomSubscription?.unsubscribe();
+    this.configSubscription?.unsubscribe();
+    this.idSubscription?.unsubscribe();
+    this.gameOverSubscription?.unsubscribe();
+    this.collisionSubscription?.unsubscribe();
   }
 
   restart(): void {
+    this.gameTime = 0;
+    this.winner = null;
+    this.displayCountdown = 0;
+    this.previousTicks = 0;
+    this.initialTicks = 0;
+    this.stopTimer();
     this.gameService.restartGame();
     this.router.navigate(['/lobby']);
   }
 
-  getAllCharacters(): (models.Character & { team: models.TeamType | null; label: string })[] {
-    if (!this.room) {
-      return [];
-    }
+  getAllCharacters() {
+    if (!this.room || !this.room.ball) return [];
+    const ball = this.room.ball;
     return this.room.players
       .flatMap((player) =>
         player.characters.map((character, index) => {
           let label = 'CS';
           if (index === 0) label = 'K';
           else if (index === 1 || index === 2) label = 'V';
+          const angle = Math.atan2(ball.y - character.y, ball.x - character.x) * (180 / Math.PI);
 
           return {
             ...character,
             team: player.team,
             label: label,
+            angle: angle,
           };
         }),
       )

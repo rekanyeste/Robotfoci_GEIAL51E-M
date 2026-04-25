@@ -19,7 +19,7 @@ export interface TeamStats {
 @Injectable({ providedIn: 'root' })
 export class LeaderboardService {
   private readonly STORAGE_KEY = 'robotfoci_stats';
-  private readonly DEFAULT_TXT = 'src/app/assets/leaderboard.txt';
+  private readonly DEFAULT_TXT = 'assets/leaderboard.txt';
 
   constructor(
     private http: HttpClient,

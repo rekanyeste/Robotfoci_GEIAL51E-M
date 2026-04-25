@@ -25,7 +25,7 @@ export class LeaderboardComponent implements OnInit {
           .map((t, i) => ({ ...t, no: i + 1 }));
       },
       error: (err) => {
-        console.error('Hiba történt a ranglista betöltésekor:', err);
+        console.error('Error fetching stats:', err);
       },
     });
   }
