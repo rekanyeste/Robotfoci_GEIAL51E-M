@@ -1,89 +1,91 @@
 @if (room) {
-  <div class="container mt-4">
-    <div class="row mb-4 align-items-center">
-      <div class="col-md-3">
-        <button class="btn btn-outline-danger shadow-sm" (click)="leaveRoom()">
-          &larr; Leave Room
-        </button>
-      </div>
-      <div class="col-md-6 text-center">
-        <h1 class="display-5 mb-0">
-          Room ID: <span class="text-primary">{{ room.roomId }}</span>
-        </h1>
-      </div>
-      <div class="col-md-3"></div>
-    </div>
+  <div id="lobby-container">
+    <div class="lobby-card">
+      <div class="lobby-header">
+        <h1>Game lobby</h1>
+        <div class="room-info">
+          <div class="id-text">
+            Room ID: <strong>#{{ room.roomId }}</strong>
+          </div>
 
-    <div class="row mb-4">
-      <!-- Team Red -->
-      <div class="col-md-4 mb-3">
-        <div class="card h-100 border-danger">
-          <div class="card-header bg-danger text-white text-center">
-            <h2 class="h5 mb-0">Team Red</h2>
-          </div>
-          <div class="card-body">
-            <ul class="list-group list-group-flush">
-              @for (player of getTeam(TeamType.Red); track $index) {
-                <li class="list-group-item text-center">{{ player.name }}</li>
-              }
-            </ul>
-          </div>
-          <div class="card-footer bg-transparent border-top-0">
-            <button class="btn btn-outline-danger w-100" (click)="joinTeam(TeamType.Red)">
-              Join Team Red
-            </button>
+          <div class="copy-container" (click)="copyRoomId()" title="Másolás">
+            @if (copyStatus === 'idle') {
+              <img
+                width="24"
+                height="24"
+                src="https://img.icons8.com/material-rounded/24/FFFFFF/copy.png"
+                alt="copy"
+                class="copy-icon"
+              />
+            } @else if (copyStatus === 'loading') {
+              <div class="spinner"></div>
+            } @else if (copyStatus === 'success') {
+              <img
+                width="24"
+                height="24"
+                src="https://img.icons8.com/material-rounded/24/40C057/checked.png"
+                alt="success"
+                class="check-icon"
+              />
+            }
           </div>
         </div>
       </div>
 
-      <!-- Team Blue -->
-      <div class="col-md-4 mb-3">
-        <div class="card h-100 border-primary">
-          <div class="card-header bg-primary text-white text-center">
-            <h2 class="h5 mb-0">Team Blue</h2>
+      <div class="teams-wrapper">
+        <div class="team-panel red-team">
+          <div class="team-header">
+            <h2>RED TEAM</h2>
+            <span class="player-count">{{ getTeam(TeamType.Red).length }} player</span>
           </div>
-          <div class="card-body">
-            <ul class="list-group list-group-flush">
-              @for (player of getTeam(TeamType.Blue); track $index) {
-                <li class="list-group-item text-center">{{ player.name }}</li>
-              }
-            </ul>
+          <div class="team-list">
+            @for (player of getTeam(TeamType.Red); track $index) {
+              <div class="player-row">
+                <span class="player-name">{{ player.name }}</span>
+              </div>
+            }
           </div>
-          <div class="card-footer bg-transparent border-top-0">
-            <button class="btn btn-outline-primary w-100" (click)="joinTeam(TeamType.Blue)">
-              Join Team Blue
-            </button>
+          <button class="btn-join red" (click)="joinTeam(TeamType.Red)">Join the Red Team</button>
+        </div>
+
+        <div class="team-panel spectator-team">
+          <div class="team-header">
+            <h2>SPECTATORS</h2>
+            <span class="player-count">{{ getSpectators().length }} player</span>
           </div>
+          <div class="team-list">
+            @for (player of getSpectators(); track $index) {
+              <div class="player-row">
+                <span class="player-name">{{ player.name }}</span>
+              </div>
+            }
+          </div>
+          <button class="btn-join spectator" (click)="joinTeam(TeamType.Spectator)">
+            Join as a Spectator
+          </button>
+        </div>
+
+        <div class="team-panel blue-team">
+          <div class="team-header">
+            <h2>BLUE TEAM</h2>
+            <span class="player-count">{{ getTeam(TeamType.Blue).length }} player</span>
+          </div>
+          <div class="team-list">
+            @for (player of getTeam(TeamType.Blue); track $index) {
+              <div class="player-row">
+                <span class="player-name">{{ player.name }}</span>
+              </div>
+            }
+          </div>
+          <button class="btn-join blue" (click)="joinTeam(TeamType.Blue)">
+            Join the Blue Team
+          </button>
         </div>
       </div>
 
-      <!-- Spectators -->
-      <div class="col-md-4 mb-3">
-        <div class="card h-100 border-secondary">
-          <div class="card-header bg-secondary text-white text-center">
-            <h2 class="h5 mb-0">Spectators</h2>
-          </div>
-          <div class="card-body">
-            <ul class="list-group list-group-flush">
-              @for (player of getSpectators(); track $index) {
-                <li class="list-group-item text-center">{{ player.name }}</li>
-              }
-            </ul>
-          </div>
-          <div class="card-footer bg-transparent border-top-0">
-            <button class="btn btn-outline-secondary w-100" (click)="joinTeam(TeamType.Spectator)">
-              Join Spectators
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col text-center">
-        <button class="btn btn-success btn-lg px-5 shadow-sm" (click)="startGame()">
-          Start Game
-        </button>
+      <div class="lobby-actions">
+        <button class="btn-leave" (click)="leaveRoom()">&larr; Leave Room</button>
+        <button class="btn-start" (click)="startGame()">Start Game</button>
       </div>
     </div>
   </div>

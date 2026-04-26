@@ -1,4 +1,3 @@
-/* --- TELJES KÉPERNYŐS VISSZASZÁMLÁLÓ --- */
 .fullscreen-countdown-overlay {
   position: fixed !important;
   top: 0 !important;
@@ -52,7 +51,7 @@
   overflow: hidden;
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/assets/stadion.png');
-  background-size: 140%;
+  background-size: 290%;
   background-position: center center;
   background-repeat: no-repeat;
 }
@@ -65,9 +64,11 @@
 
 .pitch-background {
   position: relative;
-  border: 5px solid rgba(255, 255, 255, 0.3);
+  box-sizing: content-box;
+  border: 5px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   box-shadow: 0 0 100px rgba(0, 0, 0, 0.8);
+  line-height: 0;
   background: repeating-linear-gradient(
     to right,
     #4ce074,
@@ -75,22 +76,33 @@
     #3bcf61 50px,
     #3bcf61 100px
   );
+
   &::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 10;
+    box-shadow: inset 0 0 60px 15px rgba(0, 0, 0, 0.8);
     background: radial-gradient(
       circle at center,
       rgba(255, 255, 255, 0.15) 0%,
-      rgba(0, 0, 0, 0) 40%,
-      rgba(0, 0, 0, 0.6) 100%
+      rgba(0, 0, 0, 0) 50%,
+      rgba(0, 0, 0, 0.3) 100%
     );
-    pointer-events: none;
-    z-index: 10;
   }
+}
+
+#fieldGreen {
+  display: block;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  border-radius: 2px;
 }
 
 .modern-scoreboard {
@@ -146,7 +158,7 @@
 }
 
 .end-screen-overlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -156,36 +168,135 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(5px);
 }
+
+.end-screen-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
 .winner-text {
+  font-size: 48px;
   color: white;
-  font-size: 3rem;
+  text-align: center;
+  margin: 0 0 15px 0;
+  letter-spacing: 5px;
+  text-transform: uppercase;
 }
+
 .winner-banner {
-  padding: 20px 60px;
-  font-size: 3rem;
+  font-size: 42px;
   color: white;
+  padding: 15px 50px;
   border-radius: 12px;
-  margin: 20px 0;
+  margin-bottom: 40px;
+  text-align: center;
   font-weight: 900;
+  text-transform: uppercase;
+  z-index: 1001;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  min-width: 300px;
 }
-.btn-restart {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-right: 10px;
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  z-index: 1001;
+
+  button {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .btn-restart {
+    background: #4ce074;
+    color: white;
+  }
+  .btn-leave {
+    background: #ff4d4d;
+    color: white;
+  }
 }
-.btn-leave {
-  background: #f44336;
+.winner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.winner-title {
+  font-size: 48px;
   color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
+  text-align: center;
+  margin: 0 0 10px 0;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+}
+
+.winner-name {
+  font-size: 42px;
+  color: white;
+  padding: 15px 50px;
+  border-radius: 12px;
+  margin-bottom: 40px;
+  text-align: center;
+  font-weight: 900;
+  text-transform: uppercase;
+  z-index: 1001;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  &.bg-red {
+    background-color: #ff4d4d;
+  }
+  &.bg-blue {
+    background-color: #4da6ff;
+  }
+}
+
+.winner-actions {
+  display: flex;
+  gap: 20px;
+  z-index: 1001;
+
+  button {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+    &.btn-restart {
+      background: #4ce074;
+      color: white;
+    }
+    &.btn-leave {
+      background: #ff4d4d;
+      color: white;
+    }
+  }
 }

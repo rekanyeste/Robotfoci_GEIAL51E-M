@@ -13,6 +13,7 @@ import { GameService } from '../../services/game.service';
 import { AiService } from '../../services/ai.service';
 import { LeaderboardService } from '../../services/leaderboard.service';
 import * as models from '../../models/robosoccer.models';
+import confetti from 'canvas-confetti';
 
 @Component({
   selector: 'app-field',
@@ -111,6 +112,8 @@ export class Field implements OnInit, OnDestroy {
         this.displayCountdown = 0;
         this.stopTimer();
         this.cdr.detectChanges();
+        this.fireConfetti();
+
         if (this.room) {
           const redPlayer = this.room.players.find((p) => p.team === models.TeamType.Red);
           const bluePlayer = this.room.players.find((p) => p.team === models.TeamType.Blue);
@@ -127,6 +130,45 @@ export class Field implements OnInit, OnDestroy {
     if (this.playerId === null) {
       this.gameService.getId();
     }
+  }
+
+  getWinnerNames(): string {
+    if (!this.room || !this.winner) return '';
+    return this.room.players
+      .filter((p) => p.team === this.winner)
+      .map((p) => p.name)
+      .join(' & ');
+  }
+
+  fireConfetti() {
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+
+    const frame = () => {
+      confetti({
+        particleCount: 5,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.6 },
+        colors: ['#ffffff', this.winner === this.TeamType.Red ? '#ff4d4d' : '#4da6ff'],
+        zIndex: 10000,
+      });
+
+      confetti({
+        particleCount: 5,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.6 },
+        colors: ['#ffffff', this.winner === this.TeamType.Red ? '#ff4d4d' : '#4da6ff'],
+        zIndex: 10000,
+      });
+
+      if (Date.now() < animationEnd) {
+        requestAnimationFrame(frame);
+      }
+    };
+
+    frame();
   }
 
   private startTimer() {

@@ -6,6 +6,7 @@ import { GameService } from '../../services/game.service';
 import * as models from '../../models/robosoccer.models';
 import { TeamType } from '../../models/robosoccer.models';
 
+export type CopyStatus = 'idle' | 'loading' | 'success';
 @Component({
   selector: 'app-lobby',
   imports: [CommonModule],
@@ -18,6 +19,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
   private roomSubscription: Subscription | undefined;
   private idSubscription: Subscription | undefined;
   public TeamType = TeamType;
+  public copyStatus: CopyStatus = 'idle';
 
   constructor(
     private router: Router,
@@ -45,6 +47,28 @@ export class LobbyComponent implements OnInit, OnDestroy {
     });
 
     this.gameService.getId();
+  }
+
+  copyRoomId(): void {
+    if (this.room?.roomId) {
+      this.copyStatus = 'loading';
+      navigator.clipboard
+        .writeText(this.room.roomId.toString())
+        .then(() => {
+          setTimeout(() => {
+            this.copyStatus = 'success';
+            this.cdr.detectChanges();
+            setTimeout(() => {
+              this.copyStatus = 'idle';
+              this.cdr.detectChanges();
+            }, 10000);
+          }, 300);
+        })
+        .catch((err) => {
+          console.error('Error:', err);
+          this.copyStatus = 'idle';
+        });
+    }
   }
 
   ngOnDestroy(): void {
