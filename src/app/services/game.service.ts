@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { WebsocketService } from './websocket.service';
+import { AudioService } from './audio.service';
 import * as models from '../models/robosoccer.models';
 
 @Injectable({
@@ -29,7 +30,7 @@ export class GameService {
   private collisionStateSubject = new BehaviorSubject<models.CollisionMessage | null>(null);
   public collisionState$ = this.collisionStateSubject.asObservable();
 
-  constructor(private websocketService: WebsocketService) {
+  constructor(private websocketService: WebsocketService, private audioService: AudioService) {
     this.websocketService.listen(models.ServerMessageType.ReceiveRoom).subscribe((room) => {
       const ids = this.idStateSubject.value;
 
@@ -66,6 +67,8 @@ export class GameService {
     this.websocketService.listen(models.ServerMessageType.GameOver).subscribe((winner) => {
       console.log('Received game over:', winner);
       this.gameOverStateSubject.next(winner);
+      this.audioService.stop();
+      this.audioService.play('game-over');
     });
 
     this.websocketService.listen(models.ServerMessageType.ReceiveId).subscribe((ids) => {
@@ -76,6 +79,7 @@ export class GameService {
     this.websocketService.listen(models.ServerMessageType.Collision).subscribe((collision) => {
       console.log('Received collision:', collision);
       this.collisionStateSubject.next(collision);
+      this.audioService.play('ball-kick');
     });
   }
 

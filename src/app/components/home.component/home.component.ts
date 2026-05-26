@@ -6,6 +6,7 @@ import { GameService } from '../../services/game.service';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { LeaderboardComponent } from '../leaderboard.component/leaderboard.component';
+import { AudioService } from '../../services/audio.service';
 
 @Component({
   selector: 'app-home.component',
@@ -23,9 +24,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private gameService: GameService,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
+    this.audioService.stop();
+    this.audioService.play('background-music');
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
       if (room) {
         if (room.isStarted) {

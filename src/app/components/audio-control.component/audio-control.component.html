@@ -1,0 +1,26 @@
+<div class="audio-control-container">
+  <div class="audio-control-group">
+    <span class="volume-icon">{{ getVolumeIcon() }}</span>
+
+    <input
+      type="range"
+      min="0"
+      max="100"
+      [value]="masterVolume"
+      (change)="onVolumeChange($any($event.target).valueAsNumber)"
+      class="volume-slider"
+      [attr.aria-label]="'Master volume: ' + masterVolume + '%'"
+    />
+
+    <span class="volume-text">{{ masterVolume }}%</span>
+
+    <button
+      class="mute-button"
+      (click)="toggleMute()"
+      [class.muted]="isMuted"
+      [attr.aria-label]="isMuted ? 'Unmute' : 'Mute'"
+    >
+      {{ getMuteIcon() }}
+    </button>
+  </div>
+</div>

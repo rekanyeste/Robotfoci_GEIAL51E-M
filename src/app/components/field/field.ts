@@ -14,6 +14,7 @@ import { AiService } from '../../services/ai.service';
 import { LeaderboardService } from '../../services/leaderboard.service';
 import * as models from '../../models/robosoccer.models';
 import confetti from 'canvas-confetti';
+import { AudioService } from '../../services/audio.service';
 
 @Component({
   selector: 'app-field',
@@ -38,6 +39,8 @@ export class Field implements OnInit, OnDestroy {
   private idSubscription: Subscription | undefined;
   private gameOverSubscription: Subscription | undefined;
   private collisionSubscription: Subscription | undefined;
+  private previousScore: { blue: number; red: number } | null = null;
+  private isCounting = false;
 
   constructor(
     private gameService: GameService,
@@ -45,11 +48,25 @@ export class Field implements OnInit, OnDestroy {
     private router: Router,
     private aiService: AiService,
     private leaderboardService: LeaderboardService,
+    private audioService: AudioService,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit() {
+    this.audioService.stop();
+    this.audioService.play('stadium-ambience');
+
     this.roomSubscription = this.gameService.roomState$.subscribe((room) => {
+      if (room?.score) {
+        if (this.previousScore) {
+          if (room.score.blue > this.previousScore.blue || room.score.red > this.previousScore.red) {
+            this.audioService.play('goal');
+          }
+        }
+
+        this.previousScore = { blue: room.score.blue, red: room.score.red };
+      }
+
       this.room = room;
       if (this.winner) {
         this.displayCountdown = 0;
@@ -58,6 +75,8 @@ export class Field implements OnInit, OnDestroy {
       }
       const rawTicks = this.room?.countdownTicks ?? 0;
       if (rawTicks > 0) {
+        this.isCounting = true;
+
         if (this.initialTicks === 0 || rawTicks > this.initialTicks) {
           this.initialTicks = rawTicks;
         }
@@ -71,6 +90,12 @@ export class Field implements OnInit, OnDestroy {
       } else if (rawTicks === 0 && this.room?.isStarted) {
         this.displayCountdown = 0;
         this.initialTicks = 0;
+        
+        if (this.isCounting && !this.winner) {
+          this.audioService.play('game-start');
+          this.isCounting = false;
+        }
+
         if (!this.timerInterval && !this.winner) {
           this.startTimer();
         }
@@ -210,9 +235,12 @@ export class Field implements OnInit, OnDestroy {
     this.displayCountdown = 0;
     this.previousTicks = 0;
     this.initialTicks = 0;
+    this.previousScore = null;
+    this.isCounting = false;
     this.stopTimer();
     this.gameService.restartGame();
     this.router.navigate(['/lobby']);
+    this.audioService.play('background-music');
   }
 
   getAllCharacters() {
