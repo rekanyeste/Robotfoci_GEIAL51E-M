@@ -43,9 +43,28 @@ export function calculateTarget(char: any, index: number, ctx: GameContext): Vec
   const centerY = ctx.fieldHeight / 2;
   const distToBall = Math.hypot(char.x - ctx.ball.x, char.y - ctx.ball.y);
   const isChaser = char.id === ctx.chaserId;
+  let dx = ctx.ownGoalX - ctx.ball.x;
+  let dy = centerY - ctx.ball.y;
   if (role === 'GK') {
-    const isBallInFront = ctx.ball.y > 300 && ctx.ball.y < ctx.fieldHeight - 300;
-    if (distToBall < 200 && isBallInFront) return { x: ctx.ball.x, y: ctx.ball.y };
+    const ballDistToGoal = Math.hypot(dx, dy);
+    
+    // Védekező-állapot: ha a labda túl közel van a kapuhoz
+    if (ballDistToGoal < 450) {
+      dx /= ballDistToGoal;
+      dy /= ballDistToGoal;
+
+      const approachX = ctx.ball.x + dx * 60;
+      const approachY = ctx.ball.y + dy * 60;
+      const distToApproach = Math.hypot(char.x - approachX, char.y - approachY);
+
+      if (distToApproach < 60) {
+        return { x: ctx.ball.x, y: ctx.ball.y }; 
+      } else {
+        return { x: approachX, y: approachY };   
+      }
+    }
+    
+    // Alapállapot: mozog a gólvonalon a labda vonalát követve
     return { x: ctx.ownGoalX + ctx.dir * 60, y: Math.max(380, Math.min(620, ctx.ball.y)) };
   }
   if (role.startsWith('DEF')) {

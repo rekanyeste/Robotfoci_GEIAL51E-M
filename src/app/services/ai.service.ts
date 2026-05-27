@@ -69,7 +69,7 @@ export class AiService {
       const dist = Math.hypot(c.x - room.ball.x, c.y - room.ball.y);
       const role = getRole(index);
       let weight = role === 'ATT' || role === 'SUP' ? 0.7 : 2.0;
-      if (role === 'GK') weight = dist < 250 ? 0.4 : 10.0;
+      if (role === 'GK') weight = dist < 450 ? 0.4 : 10.0;
 
       if (dist * weight < bestScore) {
         bestScore = dist * weight;
